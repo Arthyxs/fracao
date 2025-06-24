@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrida das Frações</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Estilos Gerais e Variáveis --- */
+        :root {
+            --cor-fundo: #f0f7f8;
+            --cor-texto: #333;
+            --cor-primaria: #0077b6;
+            --cor-secundaria: #00b4d8;
+            --cor-vitoria: #2ecc71;
+            --cor-aviso: #e74c3c;
+            --cor-dica: #ffc300;
+            --sombra-caixa: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: var(--sombra-caixa);
+            padding: clamp(1.5rem, 5vw, 2rem);
+            overflow: hidden;
+            position: relative;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2392d5c6' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .screen {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            margin-bottom: 0.5rem;
+            color: var(--cor-primaria);
+            text-align: center;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        h2 {
+            font-size: clamp(1.1rem, 4vw, 1.5rem);
+            margin-bottom: 1.5rem;
+            color: #555;
+            text-align: center;
+            animation: slideDown 0.5s 0.2s ease-out backwards;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            max-width: 300px;
+            margin: 1.5rem auto 0;
+            padding: 0.9rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            background-image: linear-gradient(45deg, var(--cor-vitoria), #28a745);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4);
+        }
+
+        button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        button:disabled {
+            background-image: linear-gradient(45deg, #bdc3c7, #95a5a6);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        button:not(:disabled):hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(46, 204, 113, 0.5);
+        }
+
+        /* --- Animações de Entrada --- */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+
+        /* --- Tela de Seleção --- */
+        .animal-cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .animal-card {
+            position: relative;
+            padding: 1rem;
+            border: 3px solid transparent;
+            border-radius: 15px;
+            text-align: center;
+            background-color: #fdfdfd;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            animation: popIn 0.5s ease-out backwards;
+        }
+        
+        .animal-card:active {
+            transform: scale(0.95);
+        }
+
+        .animal-card.selected {
+            border-color: var(--cor-vitoria);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .animal-emoji {
+            font-size: 3.5rem; /* Ícone maior, como na versão anterior */
+            line-height: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .animal-card.selected .animal-emoji {
+            transform: rotate(10deg) scale(1.1);
+        }
+
+        .animal-name {
+            font-size: 1.1rem; /* Tamanho maior */
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        
+        .animal-probability {
+            font-size: 1.4rem; /* Tamanho maior */
+            font-weight: 700;
+            color: var(--cor-primaria);
+            margin-top: 0.25rem;
+        }
+
+        /* --- TELA DA CORRIDA --- */
+        #race-track-container {
+            width: 100%;
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .track {
+            position: relative;
+            height: 50px;
+            background-color: #d2b48c;
+            background-image: linear-gradient(rgba(255,255,255,0.05) 50%, transparent 50%), linear-gradient(90deg, rgba(255,255,255,0.05) 50%, transparent 50%);
+            background-size: 15px 15px;
+            border-radius: 25px;
+            overflow: hidden;
+            border: 2px solid #b38b6d;
+        }
+
+        .track.player-bet {
+            box-shadow: 0 0 10px 3px var(--cor-dica);
+        }
+
+        .track .animal-racer {
+            position: absolute;
+            font-size: 2rem;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+        
+        .track .finish-line {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 30px;
+            background-image:
+                repeating-linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333),
+                repeating-linear-gradient(45deg, #333 25%, white 25%, white 75%, #333 75%, #333);
+            background-position: 0 0, 10px 10px;
+            background-size: 20px 20px;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--color);
+            opacity: 0;
+            animation: confetti-fall 1s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-20px) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(50px) rotateZ(360deg); opacity: 0; }
+        }
+
+        /* ANIMAÇÕES DA CORRIDA */
+        @keyframes race-style-1 {
+            0% { left: 10px; transform: translateY(-50%) rotate(-5deg); }
+            70% { left: 50%; transform: translateY(-50%) rotate(5deg); }
+            100% { left: calc(100% - 50px); transform: translateY(-50%) rotate(0deg); }
+        }
+        @keyframes race-style-2 {
+            0% { left: 10px; transform: translateY(-50%) scale(1); }
+            30% { left: 60%; transform: translateY(-50%) scale(1.1); }
+            100% { left: calc(100% - 50px); transform: translateY(-50%) scale(1); }
+        }
+
+        /* --- CONTAGEM REGRESSIVA (CORRIGIDO) --- */
+        #countdown-overlay {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+        }
+        
+        #countdown-text {
+            font-size: clamp(6rem, 25vmin, 12rem); /* Usa vmin para se adaptar à menor dimensão da tela */
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transform: scale(0.5);
+            opacity: 0;
+            animation: countdown-tick 1s ease-in-out;
+        }
+
+        @keyframes countdown-tick {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* --- MODAL DE RESULTADO --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            z-index: 1000;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: clamp(1.5rem, 5vw, 2rem);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            position: relative;
+            animation: popIn 0.5s ease-out;
+        }
+
+        #modal-title {
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            line-height: 1.3;
+        }
+
+        #winner-emoji {
+            font-size: clamp(4rem, 15vw, 6rem);
+            margin: 0.5rem 0;
+            animation: bounce 0.8s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        #modal-explanation, #modal-summary, #did-you-know {
+            animation: fadeIn 0.5s 0.3s ease-out backwards;
+        }
+        
+        .explanation-section {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            border-left: 5px solid var(--cor-primaria);
+            text-align: left;
+        }
+        
+        #modal-summary {
+            margin-top: 1rem;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        
+        #did-you-know {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+            font-size: 0.9rem;
+            color: #555;
+            text-align: center;
+        }
+        
+        .chance-bar {
+            display: flex;
+            width: 100%;
+            height: 35px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem 0 1.5rem;
+            border: 2px solid #ddd;
+        }
+        
+        .chance-slice {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="selection-screen" class="screen">
+            <h1>Corrida das Frações</h1>
+            <h2>Compare as frações e aposte no vencedor!</h2>
+            <div id="animal-cards" class="animal-cards-container"></div>
+            <button id="start-race-btn" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+                Iniciar Corrida!
+            </button>
+        </div>
+
+        <div id="race-screen" class="screen hidden">
+            <div id="race-track-container"></div>
+        </div>
+
+        <div id="countdown-overlay" class="hidden">
+            <span id="countdown-text">3</span>
+        </div>
+    </div>
+
+    <div id="result-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <div id="winner-emoji-container" style="position: relative; display: inline-block;">
+                <div id="winner-emoji" role="img"></div>
+            </div>
+            <div id="modal-explanation"></div>
+            <div class="chance-bar" id="chance-visualization-bar"></div>
+            <div id="modal-summary"></div>
+            <div id="did-you-know"></div>
+            <button id="play-again-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.536 12.464a.999.999 0 0 1-1.414 0L13 12.348V16a1 1 0 1 1-2 0v-4.5a1 1 0 0 1 1-1h4.5a1 1 0 1 1 0 2h-2.348l2.115 2.114a.999.999 0 0 1 0 1.414zM12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z"></path></svg>
+                Jogar Novamente
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectionScreen = document.getElementById('selection-screen');
+            const raceScreen = document.getElementById('race-screen');
+            const resultModal = document.getElementById('result-modal');
+            const animalCardsContainer = document.getElementById('animal-cards');
+            const startRaceBtn = document.getElementById('start-race-btn');
+            const raceTrackContainer = document.getElementById('race-track-container');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const countdownOverlay = document.getElementById('countdown-overlay');
+            const countdownText = document.getElementById('countdown-text');
+            
+            let animalsInRace = [];
+            let playerBet = null;
+            let commonDenominator = 0;
+            const NUMBER_OF_ANIMALS = 6;
+            const raceAnimations = ['race-style-1', 'race-style-2'];
+            const funFacts = [
+                "A palavra 'porcentagem' vem do latim 'per centum', que significa 'por cem'!",
+                "Um dado comum de 6 lados tem 1/6 de chance de cair em qualquer um dos números.",
+                "Se você jogar uma moeda para o alto, a chance de dar 'cara' é de 50%, ou 1/2.",
+                "Probabilidade nos ajuda a prever o tempo, resultados de jogos e muito mais!"
+            ];
+            const moralMessages = [
+                "Ao comparar as frações, podemos descobrir qual animal tem a vantagem. A maior fração significa a maior chance de vencer!",
+                "A matemática da corrida é clara: quem tem a maior fração, tem a maior vantagem e garante a vitória!",
+                "Este jogo mostra o poder das frações! Identificar a maior delas é o segredo para prever o campeão."
+            ];
+
+            const ANIMAL_DATA = [
+                { name: "Leão", emoji: "🦁", color: "#f39c12" }, { name: "Tartaruga", emoji: "🐢", color: "#27ae60" },
+                { name: "Zebra", emoji: "🦓", color: "#34495e" }, { name: "Macaco", emoji: "🐒", color: "#c0392b" },
+                { name: "Coelho", emoji: "🐇", color: "#9b59b6" }, { name: "Raposa", emoji: "🦊", color: "#e67e22" },
+                { name: "Urso", emoji: "🐻", color: "#8d6e63"}, { name: "Tigre", emoji: "🐅", color: "#ff6f00"}
+            ];
+
+            function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+            function simplifyFraction(num, den) {
+                const commonDivisor = gcd(num, den);
+                return [num / commonDivisor, den / commonDivisor];
+            }
+
+            function generateProbabilities() {
+                const friendlyDenominators = [60, 72, 90, 120];
+                commonDenominator = friendlyDenominators[Math.floor(Math.random() * friendlyDenominators.length)];
+                
+                let numerators = [];
+                let remaining = commonDenominator;
+
+                for (let i = 0; i < NUMBER_OF_ANIMALS - 1; i++) {
+                    const maxPossible = remaining - (NUMBER_OF_ANIMALS - 1 - i);
+                    const randomNumerator = Math.floor(Math.random() * maxPossible) + 1;
+                    numerators.push(randomNumerator);
+                    remaining -= randomNumerator;
+                }
+                numerators.push(remaining);
+                numerators.sort(() => Math.random() - 0.5);
+                
+                const shuffledAnimals = [...ANIMAL_DATA].sort(() => 0.5 - Math.random());
+                const selectedAnimals = shuffledAnimals.slice(0, NUMBER_OF_ANIMALS);
+
+                animalsInRace = selectedAnimals.map((animal, index) => {
+                    const numerator = numerators[index];
+                    const simplified = simplifyFraction(numerator, commonDenominator);
+                    return { ...animal, numerator, simplifiedNumerator: simplified[0], simplifiedDenominator: simplified[1] };
+                });
+            }
+
+            function setupNewGame() {
+                playerBet = null;
+                animalCardsContainer.innerHTML = '';
+                startRaceBtn.disabled = true;
+
+                selectionScreen.style.opacity = '1';
+                selectionScreen.classList.remove('hidden');
+                raceScreen.classList.add('hidden');
+                resultModal.classList.add('hidden');
+                
+                generateProbabilities();
+
+                animalsInRace.forEach((animal, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'animal-card';
+                    card.style.animationDelay = `${index * 0.05}s`;
+                    
+                    card.innerHTML = `
+                        <div class="animal-emoji" role="img" aria-label="${animal.name}">${animal.emoji}</div>
+                        <div class="animal-name">${animal.name}</div>
+                        <div class="animal-probability">${animal.simplifiedNumerator}/${animal.simplifiedDenominator}</div>
+                    `;
+                    card.addEventListener('click', () => handleBet(animal.name, card));
+                    animalCardsContainer.appendChild(card);
+                });
+            }
+
+            function handleBet(animalName, selectedCard) {
+                playerBet = animalName;
+                document.querySelectorAll('.animal-card').forEach(card => card.classList.remove('selected'));
+                selectedCard.classList.add('selected');
+                startRaceBtn.disabled = false;
+            }
+
+            function startRaceWithCountdown() {
+                selectionScreen.style.opacity = '0';
+                
+                setTimeout(() => {
+                    selectionScreen.classList.add('hidden');
+                    raceScreen.classList.remove('hidden');
+                    
+                    countdownOverlay.classList.remove('hidden');
+                    let count = 3;
+                    const runCountdown = () => {
+                        countdownText.textContent = count > 0 ? count : "JÁ!";
+                        countdownText.style.animation = 'none';
+                        void countdownText.offsetHeight; 
+                        countdownText.style.animation = 'countdown-tick 1s ease-in-out';
+                        
+                        if (count > 0) {
+                            count--;
+                            setTimeout(runCountdown, 1000);
+                        } else {
+                            setTimeout(() => {
+                                countdownOverlay.classList.add('hidden');
+                                actuallyStartRace();
+                            }, 1000);
+                        }
+                    };
+                    runCountdown();
+                }, 400);
+            }
+
+            function actuallyStartRace() {
+                raceTrackContainer.innerHTML = '';
+                const sortedByRank = [...animalsInRace].sort((a, b) => b.numerator - a.numerator);
+                const fastestTime = 5.0; 
+                const slowestTime = 8.0; 
+                const timeDifference = slowestTime - fastestTime;
+                const timeStep = timeDifference / (NUMBER_OF_ANIMALS - 1 || 1);
+
+                const shuffledRaceOrder = [...animalsInRace].sort(() => Math.random() - 0.5);
+
+                shuffledRaceOrder.forEach((animal) => {
+                    const rank = sortedByRank.findIndex(rankedAnimal => rankedAnimal.name === animal.name);
+                    const duration = fastestTime + (rank * timeStep);
+                    const randomAnimationName = raceAnimations[Math.floor(Math.random() * raceAnimations.length)];
+                    
+                    const track = document.createElement('div');
+                    track.className = 'track';
+                    if (animal.name === playerBet) {
+                        track.classList.add('player-bet');
+                    }
+                    track.innerHTML = `<div class="finish-line"></div>`;
+                    
+                    const racer = document.createElement('div');
+                    racer.className = 'animal-racer';
+                    racer.textContent = animal.emoji;
+                    racer.setAttribute('role', 'img');
+                    racer.setAttribute('aria-label', `Corredor ${animal.name}`);
+                    racer.style.animationName = randomAnimationName;
+                    racer.style.animationDuration = `${duration.toFixed(2)}s`;
+                    
+                    track.appendChild(racer);
+                    raceTrackContainer.appendChild(track);
+                });
+                
+                const winner = sortedByRank[0];
+                const winnerTrackElement = Array.from(raceTrackContainer.children).find(track => track.querySelector(`[aria-label='Corredor ${winner.name}']`));
+                if(winnerTrackElement) {
+                    winnerTrackElement.querySelector('.animal-racer').addEventListener('animationend', () => {
+                       createConfetti(winnerTrackElement);
+                    });
+                }
+                
+                setTimeout(() => showResults(winner), slowestTime * 1000 + 500);
+            }
+            
+            function createConfetti(targetTrackElement) {
+                const confettiContainer = targetTrackElement;
+                for (let i = 0; i < 20; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = `calc(100% - 40px)`;
+                    confetti.style.top = `${Math.random() * 100}%`;
+                    confetti.style.animationDelay = `${Math.random() * 0.2}s`;
+                    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+                    confetti.style.transform = `translateX(${(Math.random() - 0.5) * 200}px) translateY(${(Math.random() - 0.5) * 100}px) rotate(${Math.random() * 360}deg)`;
+                    confetti.style.animation = `confetti-fall ${0.5 + Math.random()}s ease-out forwards`;
+                    confettiContainer.appendChild(confetti);
+                }
+            }
+
+            function showResults(winner) {
+                const modalTitle = document.getElementById('modal-title');
+                const winnerEmoji = document.getElementById('winner-emoji');
+                const modalExplanation = document.getElementById('modal-explanation');
+                const chanceBar = document.getElementById('chance-visualization-bar');
+                const modalSummary = document.getElementById('modal-summary');
+                const didYouKnow = document.getElementById('did-you-know');
+
+                const playerWon = winner.name === playerBet;
+                if(playerWon) {
+                    modalTitle.textContent = `Parabéns! Sua aposta no ${winner.name} estava certa!`;
+                    modalTitle.style.color = 'var(--cor-vitoria)';
+                } else {
+                    modalTitle.textContent = `Quase! Você apostou no ${playerBet}, mas o ${winner.name} venceu!`;
+                    modalTitle.style.color = 'var(--cor-aviso)';
+                }
+                
+                winnerEmoji.textContent = winner.emoji;
+                winnerEmoji.setAttribute('aria-label', `Vencedor: ${winner.name}`);
+
+                const winnerPercentage = ((winner.numerator / commonDenominator) * 100).toFixed(1);
+                const randomMoral = moralMessages[Math.floor(Math.random() * moralMessages.length)];
+                const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
+
+
+                modalExplanation.innerHTML = `
+                    <p>O(A) <strong>${winner.name}</strong> venceu a corrida porque ele(a) tinha a maior chance de todas: <strong>${winnerPercentage}%</strong>!</p>
+                    <div class="explanation-section"><strong>Moral da história:</strong> ${randomMoral}</div>
+                `;
+                
+                const sortedByChance = [...animalsInRace].sort((a,b) => b.numerator - a.numerator);
+                
+                chanceBar.innerHTML = '';
+                sortedByChance.forEach(animal => {
+                    const slice = document.createElement('div');
+                    slice.className = 'chance-slice';
+                    slice.style.width = `${(animal.numerator / commonDenominator) * 100}%`;
+                    slice.style.backgroundColor = animal.color;
+                    slice.textContent = animal.emoji;
+                    slice.title = `${animal.name}: ${( (animal.numerator / commonDenominator) * 100).toFixed(1)}%`;
+                    chanceBar.appendChild(slice);
+                });
+
+                let summaryHTML = `<h3>Ordem de Chegada:</h3>`;
+                sortedByChance.forEach((animal, index) => {
+                    const trophy = index === 0 ? '<span role="img" aria-label="Troféu">🏆</span>' : '';
+                    summaryHTML += `<p><strong>${index + 1}º lugar ${trophy}:</strong> ${animal.emoji} ${animal.name} com ${animal.simplifiedNumerator}/${animal.simplifiedDenominator} (igual a ${animal.numerator}/${commonDenominator})</p>`;
+                });
+                modalSummary.innerHTML = summaryHTML;
+                
+                didYouKnow.innerHTML = `<strong>Você Sabia?</strong> ${randomFact}`;
+
+                resultModal.classList.remove('hidden');
+            }
+            
+            startRaceBtn.addEventListener('click', startRaceWithCountdown);
+            playAgainBtn.addEventListener('click', setupNewGame);
+
+            setupNewGame();
+        });
+    </script>
+</body>
+</html>
