@@ -288,17 +288,17 @@
             animation: fadeIn 0.5s 0.3s ease-out backwards;
         }
         
-        .explanation-section {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 10px;
+        #modal-explanation {
+            font-size: 1.1rem;
             margin-top: 1rem;
-            border-left: 5px solid var(--cor-primaria);
-            text-align: left;
+            line-height: 1.6;
+            text-align: center;
         }
-        
+
         #modal-summary {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
             text-align: left;
             font-size: 0.95rem;
         }
@@ -394,11 +394,6 @@
                 "O símbolo de porcentagem (%) é uma evolução da escrita da fração /100.",
                 "Na matemática, um evento impossível tem probabilidade 0, e um evento certo tem probabilidade 1.",
                 "Os antigos egípcios usavam frações há mais de 4.000 anos, mas escreviam todas com o numerador 1!"
-            ];
-            const moralMessages = [
-                "Ao comparar as frações, podemos descobrir qual animal tem a vantagem. A maior fração significa a maior chance de vencer!",
-                "A matemática da corrida é clara: quem tem a maior fração, tem a maior vantagem e garante a vitória!",
-                "Este jogo mostra o poder das frações! Identificar a maior delas é o segredo para prever o campeão."
             ];
 
             const ANIMAL_DATA = [
@@ -515,92 +510,4 @@
                     });
                     
                     const winner = sortedByRank[0];
-                    const winnerTrackElement = Array.from(raceTrackContainer.children).find(track => track.querySelector(`[aria-label='Corredor ${winner.name}']`));
-                    if(winnerTrackElement) {
-                        winnerTrackElement.querySelector('.animal-racer').addEventListener('animationend', () => {
-                           createConfetti(winnerTrackElement);
-                        });
-                    }
-                    
-                    setTimeout(() => showResults(winner), slowestTime * 1000 + 500);
-                }, 400);
-            }
-            
-            function createConfetti(targetTrackElement) {
-                const confettiContainer = targetTrackElement;
-                for (let i = 0; i < 20; i++) {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.left = `calc(100% - 40px)`;
-                    confetti.style.top = `${Math.random() * 100}%`;
-                    confetti.style.animationDelay = `${Math.random() * 0.2}s`;
-                    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
-                    confetti.style.transform = `translateX(${(Math.random() - 0.5) * 200}px) translateY(${(Math.random() - 0.5) * 100}px) rotate(${Math.random() * 360}deg)`;
-                    confetti.style.animation = `confetti-fall ${0.5 + Math.random()}s ease-out forwards`;
-                    confettiContainer.appendChild(confetti);
-                }
-            }
-
-            function showResults(winner) {
-                const modalTitle = document.getElementById('modal-title');
-                const winnerEmoji = document.getElementById('winner-emoji');
-                const modalExplanation = document.getElementById('modal-explanation');
-                const chanceBar = document.getElementById('chance-visualization-bar');
-                const modalSummary = document.getElementById('modal-summary');
-                const didYouKnow = document.getElementById('did-you-know');
-
-                const playerWon = winner.name === playerBet;
-                if(playerWon) {
-                    modalTitle.textContent = `Parabéns! Sua aposta no ${winner.name} estava certa!`;
-                    modalTitle.style.color = 'var(--cor-vitoria)';
-                } else {
-                    modalTitle.textContent = `Quase! Você apostou no ${playerBet}, mas o ${winner.name} venceu!`;
-                    modalTitle.style.color = 'var(--cor-aviso)';
-                }
-                
-                winnerEmoji.textContent = winner.emoji;
-                winnerEmoji.setAttribute('aria-label', `Vencedor: ${winner.name}`);
-
-                const winnerPercentage = ((winner.numerator / commonDenominator) * 100).toFixed(1);
-                const randomMoral = moralMessages[Math.floor(Math.random() * moralMessages.length)];
-                const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
-
-
-                modalExplanation.innerHTML = `
-                    <p>O(A) <strong>${winner.name}</strong> venceu a corrida porque ele(a) tinha a maior chance de todas: <strong>${winnerPercentage}%</strong>!</p>
-                    <div class="explanation-section"><strong>Moral da história:</strong> ${randomMoral}</div>
-                `;
-                
-                const sortedByChance = [...animalsInRace].sort((a,b) => b.numerator - a.numerator);
-                
-                chanceBar.innerHTML = '';
-                sortedByChance.forEach(animal => {
-                    const slice = document.createElement('div');
-                    slice.className = 'chance-slice';
-                    slice.style.width = `${(animal.numerator / commonDenominator) * 100}%`;
-                    slice.style.backgroundColor = animal.color;
-                    slice.textContent = animal.emoji;
-                    slice.title = `${animal.name}: ${( (animal.numerator / commonDenominator) * 100).toFixed(1)}%`;
-                    chanceBar.appendChild(slice);
-                });
-
-                let summaryHTML = `<h3>Ordem de Chegada:</h3>`;
-                sortedByChance.forEach((animal, index) => {
-                    const trophy = index === 0 ? '<span role="img" aria-label="Troféu">🏆</span>' : '';
-                    summaryHTML += `<p><strong>${index + 1}º lugar ${trophy}:</strong> ${animal.emoji} ${animal.name} com ${animal.simplifiedNumerator}/${animal.simplifiedDenominator} (igual a ${animal.numerator}/${commonDenominator})</p>`;
-                });
-                modalSummary.innerHTML = summaryHTML;
-                
-                didYouKnow.innerHTML = `<strong>Você Sabia?</strong> ${randomFact}`;
-
-                resultModal.classList.remove('hidden');
-            }
-            
-            startRaceBtn.addEventListener('click', startRace);
-            playAgainBtn.addEventListener('click', setupNewGame);
-
-            setupNewGame();
-        });
-    </script>
-</body>
-</html>
+                    const winnerTrackElement = Ar
