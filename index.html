@@ -54,7 +54,7 @@
         }
 
         .screen {
-            animation: fadeIn 0.6s ease-out;
+            transition: opacity 0.4s ease-in-out;
         }
 
         h1 {
@@ -244,34 +244,6 @@
             100% { left: calc(100% - 50px); transform: translateY(-50%) scale(1); }
         }
 
-        /* --- CONTAGEM REGRESSIVA (CORRIGIDO) --- */
-        #countdown-overlay {
-            position: absolute;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 500;
-        }
-        
-        #countdown-text {
-            font-size: clamp(6rem, 25vmin, 12rem); /* Usa vmin para se adaptar à menor dimensão da tela */
-            font-weight: 700;
-            color: white;
-            line-height: 1;
-            text-shadow: 0 0 20px rgba(0,0,0,0.5);
-            transform: scale(0.5);
-            opacity: 0;
-            animation: countdown-tick 1s ease-in-out;
-        }
-
-        @keyframes countdown-tick {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        
         /* --- MODAL DE RESULTADO --- */
         .modal-overlay {
             position: fixed;
@@ -378,10 +350,6 @@
         <div id="race-screen" class="screen hidden">
             <div id="race-track-container"></div>
         </div>
-
-        <div id="countdown-overlay" class="hidden">
-            <span id="countdown-text">3</span>
-        </div>
     </div>
 
     <div id="result-modal" class="modal-overlay hidden">
@@ -411,8 +379,6 @@
             const startRaceBtn = document.getElementById('start-race-btn');
             const raceTrackContainer = document.getElementById('race-track-container');
             const playAgainBtn = document.getElementById('play-again-btn');
-            const countdownOverlay = document.getElementById('countdown-overlay');
-            const countdownText = document.getElementById('countdown-text');
             
             let animalsInRace = [];
             let playerBet = null;
@@ -421,9 +387,13 @@
             const raceAnimations = ['race-style-1', 'race-style-2'];
             const funFacts = [
                 "A palavra 'porcentagem' vem do latim 'per centum', que significa 'por cem'!",
-                "Um dado comum de 6 lados tem 1/6 de chance de cair em qualquer um dos números.",
+                "Um dado de 6 lados tem 1/6 de chance de cair em qualquer um dos números.",
                 "Se você jogar uma moeda para o alto, a chance de dar 'cara' é de 50%, ou 1/2.",
-                "Probabilidade nos ajuda a prever o tempo, resultados de jogos e muito mais!"
+                "Probabilidade nos ajuda a prever o tempo, resultados de jogos e muito mais!",
+                "Frações equivalentes, como 1/2 e 2/4, representam o mesmo valor. É como ter uma fatia grande ou duas pequenas da mesma pizza!",
+                "O símbolo de porcentagem (%) é uma evolução da escrita da fração /100.",
+                "Na matemática, um evento impossível tem probabilidade 0, e um evento certo tem probabilidade 1.",
+                "Os antigos egípcios usavam frações há mais de 4.000 anos, mas escreviam todas com o numerador 1!"
             ];
             const moralMessages = [
                 "Ao comparar as frações, podemos descobrir qual animal tem a vantagem. A maior fração significa a maior chance de vencer!",
@@ -433,7 +403,7 @@
 
             const ANIMAL_DATA = [
                 { name: "Leão", emoji: "🦁", color: "#f39c12" }, { name: "Tartaruga", emoji: "🐢", color: "#27ae60" },
-                { name: "Zebra", emoji: "🦓", color: "#34495e" }, { name: "Macaco", emoji: "🐒", color: "#c0392b" },
+                { name: "Zebra", emoji: "🦓", color: "#34495e" }, { name: "Macaco", emoji: "�", color: "#c0392b" },
                 { name: "Coelho", emoji: "🐇", color: "#9b59b6" }, { name: "Raposa", emoji: "🦊", color: "#e67e22" },
                 { name: "Urso", emoji: "🐻", color: "#8d6e63"}, { name: "Tigre", emoji: "🐅", color: "#ff6f00"}
             ];
@@ -445,7 +415,7 @@
             }
 
             function generateProbabilities() {
-                const friendlyDenominators = [60, 72, 90, 120];
+                const friendlyDenominators = [24, 30, 36, 40, 48, 60];
                 commonDenominator = friendlyDenominators[Math.floor(Math.random() * friendlyDenominators.length)];
                 
                 let numerators = [];
@@ -504,78 +474,56 @@
                 startRaceBtn.disabled = false;
             }
 
-            function startRaceWithCountdown() {
+            function startRace() {
                 selectionScreen.style.opacity = '0';
                 
                 setTimeout(() => {
                     selectionScreen.classList.add('hidden');
                     raceScreen.classList.remove('hidden');
                     
-                    countdownOverlay.classList.remove('hidden');
-                    let count = 3;
-                    const runCountdown = () => {
-                        countdownText.textContent = count > 0 ? count : "JÁ!";
-                        countdownText.style.animation = 'none';
-                        void countdownText.offsetHeight; 
-                        countdownText.style.animation = 'countdown-tick 1s ease-in-out';
+                    raceTrackContainer.innerHTML = '';
+                    const sortedByRank = [...animalsInRace].sort((a, b) => b.numerator - a.numerator);
+                    const fastestTime = 5.0; 
+                    const slowestTime = 8.0; 
+                    const timeDifference = slowestTime - fastestTime;
+                    const timeStep = timeDifference / (NUMBER_OF_ANIMALS - 1 || 1);
+
+                    const shuffledRaceOrder = [...animalsInRace].sort(() => Math.random() - 0.5);
+
+                    shuffledRaceOrder.forEach((animal) => {
+                        const rank = sortedByRank.findIndex(rankedAnimal => rankedAnimal.name === animal.name);
+                        const duration = fastestTime + (rank * timeStep);
+                        const randomAnimationName = raceAnimations[Math.floor(Math.random() * raceAnimations.length)];
                         
-                        if (count > 0) {
-                            count--;
-                            setTimeout(runCountdown, 1000);
-                        } else {
-                            setTimeout(() => {
-                                countdownOverlay.classList.add('hidden');
-                                actuallyStartRace();
-                            }, 1000);
+                        const track = document.createElement('div');
+                        track.className = 'track';
+                        if (animal.name === playerBet) {
+                            track.classList.add('player-bet');
                         }
-                    };
-                    runCountdown();
-                }, 400);
-            }
-
-            function actuallyStartRace() {
-                raceTrackContainer.innerHTML = '';
-                const sortedByRank = [...animalsInRace].sort((a, b) => b.numerator - a.numerator);
-                const fastestTime = 5.0; 
-                const slowestTime = 8.0; 
-                const timeDifference = slowestTime - fastestTime;
-                const timeStep = timeDifference / (NUMBER_OF_ANIMALS - 1 || 1);
-
-                const shuffledRaceOrder = [...animalsInRace].sort(() => Math.random() - 0.5);
-
-                shuffledRaceOrder.forEach((animal) => {
-                    const rank = sortedByRank.findIndex(rankedAnimal => rankedAnimal.name === animal.name);
-                    const duration = fastestTime + (rank * timeStep);
-                    const randomAnimationName = raceAnimations[Math.floor(Math.random() * raceAnimations.length)];
-                    
-                    const track = document.createElement('div');
-                    track.className = 'track';
-                    if (animal.name === playerBet) {
-                        track.classList.add('player-bet');
-                    }
-                    track.innerHTML = `<div class="finish-line"></div>`;
-                    
-                    const racer = document.createElement('div');
-                    racer.className = 'animal-racer';
-                    racer.textContent = animal.emoji;
-                    racer.setAttribute('role', 'img');
-                    racer.setAttribute('aria-label', `Corredor ${animal.name}`);
-                    racer.style.animationName = randomAnimationName;
-                    racer.style.animationDuration = `${duration.toFixed(2)}s`;
-                    
-                    track.appendChild(racer);
-                    raceTrackContainer.appendChild(track);
-                });
-                
-                const winner = sortedByRank[0];
-                const winnerTrackElement = Array.from(raceTrackContainer.children).find(track => track.querySelector(`[aria-label='Corredor ${winner.name}']`));
-                if(winnerTrackElement) {
-                    winnerTrackElement.querySelector('.animal-racer').addEventListener('animationend', () => {
-                       createConfetti(winnerTrackElement);
+                        track.innerHTML = `<div class="finish-line"></div>`;
+                        
+                        const racer = document.createElement('div');
+                        racer.className = 'animal-racer';
+                        racer.textContent = animal.emoji;
+                        racer.setAttribute('role', 'img');
+                        racer.setAttribute('aria-label', `Corredor ${animal.name}`);
+                        racer.style.animationName = randomAnimationName;
+                        racer.style.animationDuration = `${duration.toFixed(2)}s`;
+                        
+                        track.appendChild(racer);
+                        raceTrackContainer.appendChild(track);
                     });
-                }
-                
-                setTimeout(() => showResults(winner), slowestTime * 1000 + 500);
+                    
+                    const winner = sortedByRank[0];
+                    const winnerTrackElement = Array.from(raceTrackContainer.children).find(track => track.querySelector(`[aria-label='Corredor ${winner.name}']`));
+                    if(winnerTrackElement) {
+                        winnerTrackElement.querySelector('.animal-racer').addEventListener('animationend', () => {
+                           createConfetti(winnerTrackElement);
+                        });
+                    }
+                    
+                    setTimeout(() => showResults(winner), slowestTime * 1000 + 500);
+                }, 400);
             }
             
             function createConfetti(targetTrackElement) {
@@ -648,7 +596,7 @@
                 resultModal.classList.remove('hidden');
             }
             
-            startRaceBtn.addEventListener('click', startRaceWithCountdown);
+            startRaceBtn.addEventListener('click', startRace);
             playAgainBtn.addEventListener('click', setupNewGame);
 
             setupNewGame();
